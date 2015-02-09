@@ -1,0 +1,19 @@
+Turn a csv into a values clause.
+
+Call csv2values with -h for help.
+
+Requires python.
+
+Examples:
+
+~$ cat /tmp/a.csv
+a,b,c
+t,2,3
+u,5,6
+v,8,9
+~$ csv2values --file /tmp/a.csv
+(values
+    ('t', '2', '3'),
+    ('u', '5', '6'),
+    ('v', '8', '9')) "derp" ("a", "b", "c")
+~$

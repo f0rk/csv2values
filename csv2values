@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+import os
+import re
+import csv
+import sys
+import decimal
+import datetime
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--file", "-f", help="csv file", required=True)
+parser.add_argument("--delimiter", "-d", help="csv delimiter", default=",")
+parser.add_argument("--alias", "-a", help="alias name", default=None)
+parser.add_argument("--mogrify", "-m", help="clean names",
+                    action="store_true", default=False)
+parser.add_argument("--lower", "-l", help="lowercase names",
+                    action="store_true", default=False)
+
+args = parser.parse_args()
+
+# check that our given file exists
+if not args.file or not os.path.exists(args.file):
+    sys.stderr.write("file '{}' does not exist.\n".format(args.file))
+    sys.exit(1)
+
+# identifier quoting function
+def quote_ident(name):
+    name = name.replace('"', '""')
+    return '"' + name + '"'
+
+# escape helper
+def escape(val):
+    return val.replace("'", "''")
+
+# name cleaner function
+empties = ""
+def clean_name(name):
+    global empties
+    name = re.sub(r'[^a-zA-Z0-9_]', "_", name)
+    name = re.sub(r'_+', "_", name)
+    if args.lower:
+        name = name.lower()
+    if not name:
+        empties += "_"
+        name = empties
+    return name
+
+# construct an table name from the file name
+if args.alias is None:
+    path_parts = os.path.split(args.file)
+    file_name = path_parts[1]
+
+    pieces = file_name.split(".")
+    if len(pieces) > 1:
+        pieces = pieces[:-1]
+
+    alias_name = ".".join(pieces)
+
+    if args.mogrify:
+        alias_name = clean_name(alias_name)
+else:
+    alias_name = args.table
+
+# get a handle on things
+fp = open(args.file)
+
+# some help to pass tabs
+delimiter = args.delimiter
+if delimiter in ("\\t", "\\\\t"):
+    delimiter = "\t"
+
+# start processing the file
+first = True
+leading_comma = ""
+header_mapping = {}
+columns = []
+reader = csv.DictReader(fp, delimiter=delimiter)
+sys.stdout.write("(values")
+for record in reader:
+    fields = reader.fieldnames
+
+    # figure out the names of the aliasing
+    if first:
+        if args.mogrify:
+            for field in fields:
+                header_mapping[field] = clean_name(field)
+        else:
+            # strip quotes to work with less chance of failure.
+            header_mapping = {f: f.replace('"', "") for f in fields}
+
+        # column aliases
+        columns = []
+        for field in fields:
+            columns.append(quote_ident(header_mapping[field]))
+
+        # enough of this boring crap
+        first = False
+
+    # write data
+    buf = []
+    for field in fields:
+        value = record[field]
+
+        # some really lame escaping
+        value = escape(value)
+
+        buf.append("'{}'".format(value))
+
+    sys.stdout.write("{}\n    ({})".format(leading_comma, ", ".join(buf)))
+    leading_comma = ","
+sys.stdout.write(") {} ({})\n".format(quote_ident(alias_name),
+                                      ", ".join(columns)))
+
