@@ -47,7 +47,7 @@ def clean_name(name):
         name = empties
     return name
 
-# construct an table name from the file name
+# construct an alias name from the file name
 if args.alias is None:
     path_parts = os.path.split(args.file)
     file_name = path_parts[1]
@@ -61,7 +61,7 @@ if args.alias is None:
     if args.mogrify:
         alias_name = clean_name(alias_name)
 else:
-    alias_name = args.table
+    alias_name = args.alias
 
 # get a handle on things
 fp = open(args.file)
