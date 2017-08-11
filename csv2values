@@ -68,7 +68,7 @@ fp = open(args.file)
 
 # some help to pass tabs
 delimiter = args.delimiter
-if delimiter in ("\\t", "\\\\t"):
+if delimiter in ("\\t", "\\\\t", "tab", "TAB"):
     delimiter = "\t"
 
 # start processing the file
