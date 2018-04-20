@@ -21,9 +21,13 @@ parser.add_argument("--lower", "-l", help="lowercase names",
 args = parser.parse_args()
 
 # check that our given file exists
-if not args.file or not os.path.exists(args.file):
+if not args.file or args.file == "-":
+    fp = sys.stdin
+elif not os.path.exists(args.file):
     sys.stderr.write("file '{}' does not exist.\n".format(args.file))
     sys.exit(1)
+else:
+    fp = open(args.file)
 
 # identifier quoting function
 def quote_ident(name):
@@ -49,22 +53,22 @@ def clean_name(name):
 
 # construct an alias name from the file name
 if args.alias is None:
-    path_parts = os.path.split(args.file)
-    file_name = path_parts[1]
+    if args.file == "-":
+        alias_name = "stdin"
+    else:
+        path_parts = os.path.split(args.file)
+        file_name = path_parts[1]
 
-    pieces = file_name.split(".")
-    if len(pieces) > 1:
-        pieces = pieces[:-1]
+        pieces = file_name.split(".")
+        if len(pieces) > 1:
+            pieces = pieces[:-1]
 
-    alias_name = ".".join(pieces)
+        alias_name = ".".join(pieces)
 
-    if args.mogrify:
-        alias_name = clean_name(alias_name)
+        if args.mogrify:
+            alias_name = clean_name(alias_name)
 else:
     alias_name = args.alias
-
-# get a handle on things
-fp = open(args.file)
 
 # some help to pass tabs
 delimiter = args.delimiter
